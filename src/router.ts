@@ -14,6 +14,13 @@ class Router {
     if (window?.history) {
       document.addEventListener("click", (e) => this.onCustomClick(e));
       window.addEventListener("popstate", (e) => this.onCustomPop(e));
+
+      window.onload = () => {
+        if (opts?.prefetch === "visible") {
+          observeAndPrefetch();
+        } else if (opts?.prefetch === "hover") {
+        }
+      };
     } else {
       console.warn("seamless router is not supported in this browser");
       this.enabled = false;
@@ -39,7 +46,9 @@ class Router {
         e.preventDefault();
 
         if (window.location.pathname === pathname && this.opts?.ignoreSameUrl) {
-          console.log(`=> ${pathname} don\`t go, because ignore same path`);
+          console.log(
+            `=> ${pathname} don\`t go, because of ignoring same path`
+          );
           return;
         }
 
@@ -74,6 +83,12 @@ class Router {
         //document.head.replaceWith(mergedHead);
 
         mergeHeads(oldHead, head);
+
+        // prefetch
+        if (this.opts?.prefetch === "visible") {
+          observeAndPrefetch();
+        } else if (this.opts?.prefetch === "hover") {
+        }
       } else {
         // external link
         if (!confirm("a you shure go to external siet?")) {
@@ -87,8 +102,6 @@ class Router {
     console.log("onCustomPop EVENT", e);
   }
 }
-
-export default Router;
 
 /**
  * return 3 arrays:
@@ -171,7 +184,25 @@ export const mergeHeads = (oldHead: any, newHead: any) => {
   // console.log("commonNodes", commonNodes);
 
   // clean from old nodes
-  oldNodes.forEach((el) => el.remove());
+  oldNodes.forEach((el: any) => {
+    if ("dataset" in el && el.dataset["router"] !== "prefetch") {
+      el.remove();
+    }
+  });
+
+  // rerun scripts with data-router="reload"
+  commonNodes.forEach((el: any) => {
+    if (el.nodeName === "SCRIPT" && el.dataset["router"] === "reload") {
+      el.remove();
+      const headEl = document.createElement(el.nodeName);
+      Array.prototype.forEach.call(el.attributes, (attr) => {
+        const { name, value } = attr;
+        headEl.setAttribute(name, value);
+      });
+      oldHead.appendChild(headEl);
+      console.log(`rerun ${el.src}`);
+    }
+  });
 
   // add new nodes
   newNodes.forEach((el) => {
@@ -183,3 +214,69 @@ export const mergeHeads = (oldHead: any, newHead: any) => {
     oldHead.appendChild(headEl);
   });
 };
+
+const observeAndPrefetch = () => {
+  let options = {
+    root: null,
+    rootMargin: "0px",
+    threshold: 1.0,
+  };
+
+  const intersectionCallback = (entries: any[]) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting) {
+        let elem = entry.target;
+
+        const link = document.createElement("link");
+        link.rel = "prefetch";
+        link.href = elem.href;
+        link.dataset["router"] = "prefetch";
+
+        // check duplicate and insert
+        let haveDuplicate = false;
+        Array.from(
+          document.querySelectorAll(
+            `head link[data-router="prefetch"][href="${elem.href}"]`
+          )
+        ).forEach((el) => {
+          if (el.isEqualNode(link)) {
+            haveDuplicate = true;
+          }
+        });
+        // add only new links
+        if (!haveDuplicate) {
+          document.head.append(link);
+          console.log("prefetch: " + link.href);
+        }
+      }
+    });
+  };
+
+  let observer = new IntersectionObserver(intersectionCallback, options);
+
+  let targets: any = Array.from(document.querySelectorAll("body a"));
+
+  targets.forEach((target: HTMLAnchorElement) => {
+    if (isLocalUrl(target.href)) {
+      observer.observe(target);
+    } else {
+      console.log("NOT prefetch: " + target.href);
+    }
+  });
+};
+
+// return true if url on this site, NOT on external site
+export const isLocalUrl = (url: string) => {
+  if (!url.includes("//") && !url.includes("http")) {
+    return true;
+  }
+
+  let urlObj = new URL(url);
+
+  if (window.location.host === urlObj.host) {
+    return true;
+  }
+  return false;
+};
+
+export default Router;

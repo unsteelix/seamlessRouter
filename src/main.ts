@@ -5,6 +5,7 @@ import Router from "./router";
 
 new Router({
   ignoreSameUrl: false,
+  prefetch: "visible",
 });
 
 document.querySelector<HTMLDivElement>("#app")!.innerHTML = `

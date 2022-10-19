@@ -1,0 +1,1 @@
+console.log('every js' + Date.now())
