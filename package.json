@@ -1,11 +1,14 @@
 {
-  "name": "vite-project",
-  "private": true,
-  "version": "0.0.0",
+  "name": "seamless-router",
+  "version": "0.7.5",
+  "author": "Orekhov Kirill",
   "type": "module",
+  "types": "dist/index.d.ts",
+  "main": "dist/index.js",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "buildOld": "tsc && vite build",
+    "build": "vite build && npx tsc --emitDeclarationOnly",
     "preview": "vite preview"
   },
   "devDependencies": {
@@ -13,6 +16,6 @@
     "vite": "^3.1.0"
   },
   "dependencies": {
-
+    "seamless-router": "^0.7.5"
   }
 }

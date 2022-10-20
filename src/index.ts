@@ -1,7 +1,7 @@
 import Router from "./router";
 import { SeamlessRouterOptions, SeamlessWindow } from "./interfaces";
 
-export default (opts?: SeamlessRouterOptions): Router => {
+const seamlessRouter = (opts?: SeamlessRouterOptions): Router => {
   const router = new Router(opts);
 
   console.log("🔥 seamlessRouter engaged");
@@ -12,3 +12,5 @@ export default (opts?: SeamlessRouterOptions): Router => {
 
   return router;
 };
+
+export default seamlessRouter;

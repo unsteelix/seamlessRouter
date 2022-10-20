@@ -31,7 +31,7 @@ class Router {
     const target: HTMLInputElement = e.target as HTMLInputElement;
 
     if (target?.nodeName === "A") {
-      const { baseURI, origin, nodeName, href, pathname, host } = <any>target;
+      const { pathname, host } = <any>target;
 
       // console.log(
       //   `origin: ${origin}`,
@@ -55,8 +55,6 @@ class Router {
         console.log(`=> ${pathname}`);
 
         // fetch new page
-        fetchPage(pathname);
-
         const html = await fetchPage(pathname);
 
         // dom
@@ -68,19 +66,9 @@ class Router {
 
         const oldHead = document.getElementsByTagName("head")[0];
 
-        // console.log("head", head);
-        // console.log("body", body);
-
-        //const dom: any = new JSDOM(html);
-        //console.log("dom:", dom);
-
-        document.body.replaceWith(body);
-
-        //console.log("newPage:", html);
-
         // change URL
         window.history.pushState({}, "", pathname);
-        //document.head.replaceWith(mergedHead);
+        document.body.replaceWith(body);
 
         mergeHeads(oldHead, head);
 
@@ -91,14 +79,14 @@ class Router {
         }
       } else {
         // external link
-        if (!confirm("a you shure go to external siet?")) {
+        if (!confirm("a you shure go to external site?")) {
           e.preventDefault();
         }
       }
     }
   }
 
-  private onCustomPop(e: PopStateEvent): void {
+  private async onCustomPop(e: PopStateEvent): Promise<void> {
     console.log("onCustomPop EVENT", e);
   }
 }
@@ -165,7 +153,8 @@ export const fetchPage = async (path: string): Promise<string> => {
     return await res.text();
   }
   console.warn("Error fetching new page: " + res.status, res.text);
-  throw new Error(res.text);
+  //throw new Error(res.text);
+  return "";
 };
 
 /**
