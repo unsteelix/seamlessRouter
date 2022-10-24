@@ -70,6 +70,7 @@ class Router {
         window.history.pushState({}, "", pathname);
         document.body.replaceWith(body);
 
+        replaceBody(body);
         mergeHeads(oldHead, head);
 
         // prefetch
@@ -204,6 +205,29 @@ export const mergeHeads = (oldHead: any, newHead: any) => {
   });
 };
 
+export function replaceBody(newBody: Document["body"]): void {
+  const nodesToPreserve = document.body.querySelectorAll(
+    "[seamless-router-preserve]"
+  );
+  nodesToPreserve.forEach((oldDocElement) => {
+    let nextDocElement = newBody.querySelector(
+      '[seamless-router-preserve][id="' + oldDocElement.id + '"]'
+    );
+    if (nextDocElement) {
+      const clone = oldDocElement.cloneNode(true);
+      nextDocElement.replaceWith(clone);
+    }
+  });
+
+  document.body.replaceWith(newBody);
+
+  // Run scripts in body
+  const bodyScripts = document.body.querySelectorAll("script");
+  bodyScripts.forEach((el) => {
+    reRunScript(el);
+  });
+}
+
 const observeAndPrefetch = () => {
   let options = {
     root: null,
@@ -266,6 +290,16 @@ export const isLocalUrl = (url: string) => {
     return true;
   }
   return false;
+};
+
+export const reRunScript = (oldScript: HTMLScriptElement): void => {
+  const newScript = document.createElement("script");
+  const attrs = Array.from(oldScript.attributes);
+  for (const { name, value } of attrs) {
+    newScript[name] = value;
+  }
+  newScript.append(oldScript.textContent);
+  oldScript.replaceWith(newScript);
 };
 
 export default Router;
